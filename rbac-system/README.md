@@ -395,6 +395,110 @@ To enable automatic deployment via GitHub Actions:
 
 3. Push to main branch - Vercel will auto-deploy!
 
+### Deploy Backend via GitHub Actions
+
+We provide three GitHub Actions workflows for backend deployment:
+
+#### Option A: Render.com (Recommended - Free)
+
+1. **Create a Web Service on Render:**
+   - Go to https://dashboard.render.com
+   - Click "New +" → "Web Service"
+   - Connect your GitHub repo
+   - Select Docker environment
+   - Set root directory: `springboot-backend`
+
+2. **Get Deploy Hook URL:**
+   - In Render dashboard, go to your service
+   - Click "Settings" → "Deploy Hook"
+   - Copy the URL (looks like: `https://api.render.com/deploy/srv-xxxxx?key=xxxxx`)
+
+3. **Add GitHub Secret:**
+   - Go to GitHub repo → Settings → Secrets and variables → Actions
+   - Add secret: `RENDER_DEPLOY_HOOK_URL` = your deploy hook URL
+
+4. **Trigger Deployment:**
+   ```bash
+   git push origin main
+   ```
+   Or manually trigger: Go to Actions → "Deploy Backend to Render" → "Run workflow"
+
+#### Option B: Railway.app (Free Tier)
+
+1. **Sign up at Railway:** https://railway.app
+
+2. **Install Railway CLI locally:**
+   ```bash
+   npm install -g @railway/cli
+   railway login
+   ```
+
+3. **Create project and get token:**
+   ```bash
+   cd springboot-backend
+   railway init
+   railway up
+   ```
+
+4. **Get Railway Token:**
+   - Go to Railway dashboard → Account → Tokens
+   - Create new token
+
+5. **Add GitHub Secret:**
+   - `RAILWAY_TOKEN` = your railway token
+
+6. **Deploy:**
+   Push to main or trigger workflow manually
+
+#### Option C: Fly.io (Free Tier - $5 credit)
+
+1. **Install Fly.io CLI:**
+   ```bash
+   curl -L https://fly.io/install.sh | sh
+   fly auth signup  # or fly auth login
+   ```
+
+2. **Create app:**
+   ```bash
+   cd springboot-backend
+   fly launch --name rbac-backend --region iad
+   ```
+
+3. **Get Fly.io Token:**
+   ```bash
+   fly auth token
+   ```
+
+4. **Add GitHub Secret:**
+   - `FLY_API_TOKEN` = your fly.io token
+
+5. **Deploy:**
+   Push to main or trigger workflow manually
+
+### Setting Environment Variables
+
+After deploying backend, configure these environment variables in your hosting platform:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `SPRING_PROFILES_ACTIVE` | Spring profile | `prod` |
+| `JWT_SECRET` | JWT signing key | Generate random 256-bit string |
+| `JWT_EXPIRATION` | Token expiration (ms) | `86400000` |
+| `CORS_ALLOWED_ORIGINS` | Allowed frontend URLs | `https://your-app.vercel.app` |
+
+### Complete Deployment Summary
+
+After setup, your deployment flow is:
+
+1. **Push code to main branch**
+2. **GitHub Actions automatically:**
+   - Builds and tests backend
+   - Deploys to your chosen platform (Render/Railway/Fly)
+   - Builds and deploys frontend to Vercel
+3. **Access your app:**
+   - Frontend: `https://your-app.vercel.app`
+   - Backend: `https://your-backend.render.com/api`
+
 ## License
 
 MIT License
