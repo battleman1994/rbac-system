@@ -336,6 +336,65 @@ Before deploying to production:
 - [ ] Configure CORS origins in backend
 - [ ] Review and tighten security policies
 
+### Vercel + Render Deployment (Free Hosting)
+
+For free cloud deployment with automatic CI/CD:
+
+#### 1. Deploy Backend to Render.com
+
+1. Go to [render.com](https://render.com) and sign up/login
+2. Click "New +" → "Blueprint"
+3. Connect your GitHub repository
+4. Render will detect `render.yaml` and create the web service
+5. Wait for deployment (takes ~5 minutes)
+6. Copy the deployed URL (e.g., `https://rbac-backend-xxxxx.onrender.com`)
+
+#### 2. Deploy Frontend to Vercel
+
+1. Go to [vercel.com](https://vercel.com) and sign up/login
+2. Click "Add New Project"
+3. Import your GitHub repository
+4. Configure:
+   - **Framework Preset**: Vite
+   - **Root Directory**: `vue3-frontend`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+5. Add Environment Variable:
+   - Name: `VITE_API_BASE_URL`
+   - Value: `https://your-render-backend-url.onrender.com/api` (from step 1)
+6. Click "Deploy"
+
+#### 3. Configure CORS
+
+In Render dashboard, add environment variable to backend:
+- Key: `CORS_ALLOWED_ORIGINS`
+- Value: `https://your-vercel-frontend-url.vercel.app`
+
+#### 4. Your Public URLs
+
+After deployment:
+- **Frontend**: `https://your-project.vercel.app`
+- **Backend API**: `https://rbac-backend-xxxxx.onrender.com/api`
+
+#### 5. GitHub Actions Auto-Deploy (Optional)
+
+To enable automatic deployment via GitHub Actions:
+
+1. Get Vercel token:
+   ```bash
+   npm i -g vercel
+   vercel login
+   vercel tokens create
+   ```
+
+2. Add GitHub Secrets:
+   - `VERCEL_TOKEN` - Your Vercel token
+   - `VERCEL_ORG_ID` - From `.vercel/project.json`
+   - `VERCEL_PROJECT_ID` - From `.vercel/project.json`
+   - `BACKEND_URL` - Your Render backend URL
+
+3. Push to main branch - Vercel will auto-deploy!
+
 ## License
 
 MIT License
