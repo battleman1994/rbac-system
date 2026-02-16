@@ -1,0 +1,37 @@
+version: '3.8'
+
+# Development docker-compose with H2 database (no MySQL needed)
+services:
+  backend:
+    build:
+      context: ./springboot-backend
+      dockerfile: Dockerfile
+    container_name: rbac-backend-dev
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      JWT_SECRET: dev-secret-key-change-in-production
+      JWT_EXPIRATION: 86400000
+    ports:
+      - "8080:8080"
+    networks:
+      - rbac-dev-network
+
+  frontend:
+    build:
+      context: ./vue3-frontend
+      dockerfile: Dockerfile
+    container_name: rbac-frontend-dev
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8080/api
+    depends_on:
+      - backend
+    networks:
+      - rbac-dev-network
+
+networks:
+  rbac-dev-network:
+    driver: bridge

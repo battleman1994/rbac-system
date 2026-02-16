@@ -25,7 +25,7 @@ A complete Role-Based Access Control (RBAC) system built with Vue 3 (frontend) a
 - SpringBoot 2.7.x
 - Spring Security 5.7.x
 - JJWT 0.11.x
-- Spring Data JPA
+- MyBatis-Plus 3.5.x (data access layer)
 - H2 Database (development)
 - MySQL (production)
 
@@ -40,9 +40,9 @@ rbac-system/
 │   │   │   │   ├── config/      # Configuration classes
 │   │   │   │   ├── controller/  # REST controllers
 │   │   │   │   ├── dto/         # Data transfer objects
-│   │   │   │   ├── entity/      # JPA entities
+│   │   │   │   ├── entity/      # MyBatis-Plus entities
 │   │   │   │   ├── exception/   # Exception handlers
-│   │   │   │   ├── repository/  # JPA repositories
+│   │   │   │   ├── mapper/      # MyBatis-Plus mappers
 │   │   │   │   ├── security/    # Security classes
 │   │   │   │   └── service/     # Business logic
 │   │   │   └── resources/
@@ -186,6 +186,155 @@ VITE_API_BASE_URL=http://localhost:8080/api
 - Role-based access control on endpoints
 - Method-level security with @PreAuthorize
 - CORS configuration for cross-origin requests
+
+## Deployment
+
+### Docker Compose (Recommended for local development)
+
+The project includes Docker Compose configurations for both development and production environments.
+
+#### Quick Start with Docker Compose
+
+```bash
+# Clone the repository
+git clone https://github.com/battleman1994/rbac-system.git
+cd rbac-system
+
+# Start all services (MySQL, Redis, Backend, Frontend)
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+
+# Stop and remove volumes (WARNING: deletes database data)
+docker-compose down -v
+```
+
+Access the application:
+- Frontend: http://localhost
+- Backend API: http://localhost:8080/api
+- API Documentation: http://localhost:8080/swagger-ui.html (if enabled)
+
+#### Development Mode (H2 Database)
+
+```bash
+# Start with H2 in-memory database (faster for development)
+docker-compose -f docker-compose.dev.yml up -d
+```
+
+### Kubernetes Deployment
+
+For production deployment on Kubernetes:
+
+```bash
+# Apply all manifests
+kubectl apply -f k8s/
+
+# Or apply individually
+kubectl apply -f k8s/01-mysql.yaml
+kubectl apply -f k8s/02-backend.yaml
+kubectl apply -f k8s/03-frontend.yaml
+kubectl apply -f k8s/04-redis.yaml
+```
+
+See [k8s/README.md](k8s/README.md) for detailed Kubernetes deployment instructions.
+
+### CI/CD with GitHub Actions
+
+The project includes GitHub Actions workflows for automated CI/CD:
+
+- **Backend CI/CD** (`.github/workflows/backend.yml`):
+  - Runs on every push to `main` or `develop` branches
+  - Executes Maven tests and generates test reports
+  - Builds Docker image and pushes to GitHub Container Registry
+  - Scans image for security vulnerabilities using Trivy
+  - Deploys to staging (develop branch) or production (main branch)
+
+- **Frontend CI/CD** (`.github/workflows/frontend.yml`):
+  - Runs on every push to `main` or `develop` branches
+  - Executes ESLint, TypeScript type checking, and unit tests
+  - Builds application and Docker image
+  - Pushes to GitHub Container Registry
+  - Runs E2E tests with Playwright on pull requests
+
+#### Container Registry Images
+
+After CI/CD runs, images are available at:
+
+```
+ghcr.io/battleman1994/rbac-system/backend:latest
+ghcr.io/battleman1994/rbac-system/frontend:latest
+```
+
+Pull images locally:
+
+```bash
+docker pull ghcr.io/battleman1994/rbac-system/backend:latest
+docker pull ghcr.io/battleman1994/rbac-system/frontend:latest
+```
+
+#### Setting Up GitHub Actions
+
+1. Push code to GitHub - workflows trigger automatically
+2. Images are built and pushed to GitHub Container Registry
+3. Update deployment manifests with new image tags
+4. Configure deployment secrets (optional):
+   - `KUBE_CONFIG` - Kubernetes config for deployment
+   - `DEPLOY_SSH_KEY` - SSH key for server deployment
+
+### Manual Docker Build
+
+If you prefer to build images manually:
+
+```bash
+# Build backend image
+cd springboot-backend
+docker build -t rbac-backend:latest .
+
+# Build frontend image
+cd ../vue3-frontend
+docker build -t rbac-frontend:latest .
+
+# Run containers
+docker run -d -p 8080:8080 --name backend rbac-backend:latest
+docker run -d -p 80:80 --name frontend rbac-frontend:latest
+```
+
+### Environment Variables
+
+#### Backend
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SPRING_PROFILES_ACTIVE` | Active Spring profile | `dev` |
+| `SPRING_DATASOURCE_URL` | Database JDBC URL | H2 in-memory |
+| `SPRING_DATASOURCE_USERNAME` | Database username | `sa` |
+| `SPRING_DATASOURCE_PASSWORD` | Database password | - |
+| `JWT_SECRET` | JWT signing secret | Change in production |
+| `JWT_EXPIRATION` | Token expiration (ms) | `86400000` |
+
+#### Frontend
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VITE_API_BASE_URL` | Backend API base URL | `/api` |
+
+### Production Checklist
+
+Before deploying to production:
+
+- [ ] Change default passwords in `docker-compose.yml` or Kubernetes Secrets
+- [ ] Update `JWT_SECRET` to a strong 256-bit key
+- [ ] Configure MySQL with persistent volumes
+- [ ] Enable HTTPS/TLS on Ingress or reverse proxy
+- [ ] Set up database backups
+- [ ] Configure log aggregation (ELK, Loki, etc.)
+- [ ] Set up monitoring (Prometheus/Grafana)
+- [ ] Configure CORS origins in backend
+- [ ] Review and tighten security policies
 
 ## License
 
